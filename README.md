@@ -37,6 +37,10 @@ GITHUB_TOKEN=token
 
 ## Live karna
 
+`main` branch pe push karte hi Cloudflare Workers Builds site khud build karke live kar deta hai. Build ka haal Cloudflare Dashboard → Workers & Pages → mahato-net-cafe → Deployments me dikhta hai.
+
+PC se seedhe live karna ho to:
+
 ```bash
 npx cf auth login
 npm run deploy:vinext
