@@ -55,6 +55,8 @@ export function PayButton({ code, label, demo }: { code: string; label: string; 
         order_id: start.razorpayOrderId,
         prefill: { name: start.name, contact: start.contact },
         theme: { color: "#0774b0" },
+        // Inside the Android app, this lets UPI open GPay, PhonePe and other installed apps.
+        ...(navigator.userAgent.includes("MahatoNetCafeApp") ? { webview_intent: true } : {}),
         modal: { ondismiss: () => setBusy(false) },
         handler: async (r: RazorpayResponse) => {
           setBusy(true);

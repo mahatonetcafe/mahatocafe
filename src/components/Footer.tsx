@@ -37,6 +37,7 @@ export async function Footer() {
             <li><Link className="hover:text-white" href="/policy/terms">Terms aur Conditions</Link></li>
             <li><Link className="hover:text-white" href="/policy/privacy">Privacy Policy</Link></li>
             <li><Link className="hover:text-white" href="/policy/delivery">Service Delivery</Link></li>
+            <li><Link className="hover:text-white" href="/delete-account">Account delete karein</Link></li>
           </ul>
         </div>
         {promo_on === "1" && (

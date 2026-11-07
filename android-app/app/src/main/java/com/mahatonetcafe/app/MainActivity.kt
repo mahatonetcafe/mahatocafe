@@ -11,8 +11,10 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Environment
+import android.os.Message
 import android.provider.MediaStore
 import android.view.View
+import android.view.ViewGroup
 import android.webkit.CookieManager
 import android.webkit.URLUtil
 import android.webkit.ValueCallback
@@ -23,6 +25,7 @@ import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.Button
+import android.widget.FrameLayout
 import android.widget.ProgressBar
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -45,9 +48,13 @@ import java.io.File
  */
 class MainActivity : ComponentActivity() {
 
+    private lateinit var root: FrameLayout
     private lateinit var web: WebView
     private lateinit var progress: ProgressBar
     private lateinit var offline: View
+
+    /** The bank or card page Razorpay opens during a payment. */
+    private var popup: WebView? = null
 
     private val siteHost: String = Uri.parse(BuildConfig.SITE_URL).host.orEmpty()
 
@@ -85,7 +92,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        val root = findViewById<View>(R.id.root)
+        root = findViewById(R.id.root)
         web = findViewById(R.id.web)
         progress = findViewById(R.id.progress)
         offline = findViewById(R.id.offline)
@@ -106,11 +113,15 @@ class MainActivity : ComponentActivity() {
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                if (web.canGoBack()) {
-                    web.goBack()
-                } else {
-                    isEnabled = false
-                    onBackPressedDispatcher.onBackPressed()
+                val open = popup
+                when {
+                    open != null -> if (open.canGoBack()) open.goBack() else closePopup()
+                    web.canGoBack() -> web.goBack()
+                    else -> {
+                        isEnabled = false
+                        onBackPressedDispatcher.onBackPressed()
+                        isEnabled = true // Android 12+ keeps this activity alive after back
+                    }
                 }
             }
         })
@@ -120,26 +131,40 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    @SuppressLint("SetJavaScriptEnabled")
     private fun configureWebView() {
-        web.settings.apply {
+        CookieManager.getInstance().setAcceptCookie(true)
+        applySettings(web)
+        web.webViewClient = SiteClient()
+        web.webChromeClient = ChromeClient()
+    }
+
+    @SuppressLint("SetJavaScriptEnabled")
+    private fun applySettings(view: WebView) {
+        view.settings.apply {
             javaScriptEnabled = true
             domStorageEnabled = true
             allowFileAccess = false
             allowContentAccess = false
             mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
+            // Card and net banking pages open as a new window. Without these they would replace
+            // the site and the payment result would never reach it.
+            setSupportMultipleWindows(true)
+            javaScriptCanOpenWindowsAutomatically = true
             // Lets the website hide its "download our app" section inside the app.
             userAgentString = "$userAgentString MahatoNetCafeApp/${BuildConfig.VERSION_NAME}"
         }
-        CookieManager.getInstance().apply {
-            setAcceptCookie(true)
-            setAcceptThirdPartyCookies(web, true) // Razorpay checkout needs this
-        }
-        web.webViewClient = SiteClient()
-        web.webChromeClient = ChromeClient()
-        web.setDownloadListener { url, userAgent, disposition, mime, _ ->
+        CookieManager.getInstance().setAcceptThirdPartyCookies(view, true) // Razorpay checkout needs this
+        view.setDownloadListener { url, userAgent, disposition, mime, _ ->
             download(url, userAgent, disposition, mime)
         }
+    }
+
+    private fun closePopup() {
+        popup?.let {
+            root.removeView(it)
+            it.destroy()
+        }
+        popup = null
     }
 
     private inner class SiteClient : WebViewClient() {
@@ -164,9 +189,53 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    /** Banks use many different domains, so a payment window may go anywhere on the web. */
+    private inner class PopupClient : WebViewClient() {
+        override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
+            val uri = request.url
+            if (uri.scheme == "http" || uri.scheme == "https") return false
+            openOutside(uri)
+            return true
+        }
+    }
+
     private inner class ChromeClient : WebChromeClient() {
         override fun onProgressChanged(view: WebView, newProgress: Int) {
             progress.progress = newProgress
+        }
+
+        override fun onCreateWindow(
+            view: WebView,
+            isDialog: Boolean,
+            isUserGesture: Boolean,
+            resultMsg: Message,
+        ): Boolean {
+            // target="_blank" links also arrive here. Other sites belong in their own app or browser.
+            // The shop's policy links stay in this window, so a half-filled form underneath survives.
+            val hit = view.hitTestResult
+            val link = if (hit.type == WebView.HitTestResult.SRC_ANCHOR_TYPE) hit.extra?.let(Uri::parse) else null
+            if (link != null && !staysInApp(link)) {
+                openOutside(link)
+                return false
+            }
+
+            closePopup()
+            val child = WebView(this@MainActivity)
+            applySettings(child)
+            child.webViewClient = PopupClient()
+            child.webChromeClient = this
+            root.addView(
+                child,
+                FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT),
+            )
+            popup = child
+            (resultMsg.obj as WebView.WebViewTransport).webView = child
+            resultMsg.sendToTarget()
+            return true
+        }
+
+        override fun onCloseWindow(window: WebView) {
+            if (window === popup) closePopup()
         }
 
         override fun onShowFileChooser(

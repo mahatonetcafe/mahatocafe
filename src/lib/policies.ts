@@ -130,9 +130,25 @@ export const POLICIES: Record<string, Policy> = {
         ],
       },
       {
+        heading: "Android app",
+        points: [
+          "Camera sirf tab khulta hai jab aap khud document ki photo lete hain. Photo sirf aapke order ke liye upload hoti hai.",
+          "Receiving download karne par wo aapke phone ke Downloads folder me save hoti hai.",
+          "App aapke contacts, location ya baaki photos nahi padhta, aur usme koi vigyapan nahi hai.",
+        ],
+      },
+      {
+        heading: "Account delete karna",
+        points: [
+          "Website ya app ke footer me Account delete karein pe jayein, ya seedhe mahatocafe.tech/delete-account kholein.",
+          "Delete karne par aapka naam, mobile number, password, form ki jaankari, documents aur receiving hat jate hain. Ye wapas nahi aate.",
+          "Jis order ka payment hua ho, uska order number, service, rashi aur payment ID hisaab aur kanooni zaroorat ke liye rakha jata hai, bina aapke naam ya mobile number ke.",
+        ],
+      },
+      {
         heading: "Aapke adhikar",
         points: [
-          "Apni jaankari dekhne, sudharne ya delete karwane ke liye hamse sampark karein.",
+          "Apni jaankari dekhne ya sudharne ke liye hamse sampark karein.",
           "18 saal se kam umar ke applicant ke liye form parent ya guardian ki anumati se bharein.",
         ],
       },

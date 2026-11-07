@@ -8,7 +8,9 @@ import {
   clearLoginFailures, endSession, ensureAdmin, loginLocked, recordLoginFailure, requireUser, safeNext, startSession,
 } from "@/lib/auth";
 import { verifyCaptcha } from "@/lib/captcha";
-import { one, run } from "@/lib/db";
+import { all, batch, one, run } from "@/lib/db";
+import { erasureStatements } from "@/lib/erasure";
+import { deleteFile } from "@/lib/github";
 import { hashPassword, verifyPassword } from "@/lib/password";
 import { UploadError, isRealFile, removeStored, saveUpload, workFolder } from "@/lib/files";
 import { getOrderByCode, getService, getServiceById, orderFiles } from "@/lib/queries";
@@ -64,6 +66,44 @@ export async function loginAction(_: FormState, fd: FormData): Promise<FormState
   await clearLoginFailures(mobile);
   await startSession(user.id);
   redirect(safeNext(fd.get("next"), user.role === "admin" ? "/admin" : "/orders"));
+}
+
+// Stays under the platform's limit on outside calls. Files past this are already unreadable.
+const MAX_FILES_REMOVED = 20;
+
+export async function deleteAccountAction(_: FormState, fd: FormData): Promise<FormState> {
+  const user = await requireUser("/delete-account");
+  if (user.role === "admin") return { error: "Admin account yahan se delete nahi hota" };
+  if (fd.get("confirm") !== "on") return { error: "Delete karne ke liye sahi ka nishan lagayein" };
+  if (await loginLocked(user.mobile)) return { error: "Bahut baar galat password. 15 minute baad koshish karein." };
+
+  const row = await one("SELECT password_hash FROM users WHERE id = ?", user.id) as { password_hash: string } | undefined;
+  if (!row || !(await verifyPassword(String(fd.get("password") ?? ""), row.password_hash))) {
+    await recordLoginFailure(user.mobile);
+    return { error: "Password galat hai" };
+  }
+  await clearLoginFailures(user.mobile);
+
+  const running = await one(
+    "SELECT code FROM orders WHERE user_id = ? AND status IN ('processing','needs_correction') LIMIT 1",
+    user.id,
+  ) as { code: string } | undefined;
+  if (running) {
+    return { error: `Aapka order ${running.code} abhi chal raha hai. Kaam poora hone ke baad delete karein, ya dukan se sampark karein.` };
+  }
+
+  const files = await all(
+    `SELECT f.stored_name, f.remote_sha FROM order_files f JOIN orders o ON o.id = f.order_id
+       WHERE o.user_id = ? AND f.deleted_at IS NULL`,
+    user.id,
+  ) as { stored_name: string; remote_sha: string | null }[];
+
+  await batch(erasureStatements(user.id, user.mobile));
+  for (const f of files.slice(0, MAX_FILES_REMOVED)) {
+    await deleteFile(f.stored_name, f.remote_sha ?? "", "Delete file after account deletion").catch(console.error);
+  }
+  await endSession();
+  redirect("/delete-account?done=1");
 }
 
 function newCode() {
