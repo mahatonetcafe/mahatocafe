@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Mahato Net Cafe</string>
+    <string name="offline_title">Internet nahi mil raha</string>
+    <string name="offline_body">Apna internet check karke dobara koshish karein.</string>
+    <string name="retry">Dobara koshish karein</string>
+    <string name="choose_file">Document chunein</string>
+    <string name="no_app">Isko kholne wala app nahi mila</string>
+    <string name="download_started">Receiving download ho rahi hai</string>
+    <string name="download_failed">Download nahi ho paya. Dobara koshish karein.</string>
+    <string name="storage_needed">Download ke liye anumati dein, phir dobara dabayein</string>
+</resources>

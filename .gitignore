@@ -1,0 +1,27 @@
+node_modules/
+.next/
+next-env.d.ts
+*.tsbuildinfo
+
+# Customer data and secrets: never commit these
+data/
+.env
+.env.local
+
+# Local only
+.claude/
+design/
+github-upload/
+/dist/
+.vinext/
+.cloudflare/
+
+# Cloudflare
+.dev.vars
+.wrangler/
+.cloudflare/
+.vinext/
+dist/
+
+# Private note with the live admin password
+.production-secrets.txt
