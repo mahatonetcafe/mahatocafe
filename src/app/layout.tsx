@@ -9,6 +9,7 @@ const roboto = Roboto({
 });
 
 export const metadata: Metadata = {
+  applicationName: "Mahato Net Cafe",
   title: {
     default: "Mahato Net Cafe, Baliapur Dhanbad | PAN, Aadhaar, Voter ID aur online seva",
     template: "%s | Mahato Net Cafe",
