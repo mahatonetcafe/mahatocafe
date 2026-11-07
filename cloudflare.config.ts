@@ -20,7 +20,7 @@ export default defineConfig({
     env: {
       ASSETS: bindings.assets(),
       RENDERER: bindings.durableObject({ worker: "mahato-net-cafe", exportName: "SiteRenderer" }),
-      DB: bindings.d1({ name: "mahato-net-cafe" }),
+      DB: bindings.d1({ id: "0b3fc9c4-ebca-4f76-b5fb-16253db14ea9" }),
       ADMIN_MOBILE: bindings.text("7992384657"),
       RAZORPAY_KEY_ID: bindings.text("rzp_live_T5pLQBi6lU13pN"),
       GITHUB_REPO: bindings.text("mahatonetcafe/mahato-documents"),
