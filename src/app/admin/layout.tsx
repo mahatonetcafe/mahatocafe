@@ -12,14 +12,14 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     <div className="min-h-dvh bg-surface">
       <header className="sticky top-0 z-30 bg-brand-900 text-white">
         <div className="container-x flex h-14 items-center gap-3 sm:gap-5 overflow-x-auto whitespace-nowrap text-sm font-medium">
-          <Link href="/admin" className="flex items-center gap-2 font-bold">
+          <Link href="/admin" className="flex shrink-0 items-center gap-2 font-bold">
             <span className="rounded-md bg-white p-0.5">
               <Image src="/logo.png" alt="" width={36} height={30} className="h-7 w-auto" />
             </span>
             <span className="hidden sm:inline">Admin</span>
           </Link>
           <Link href="/admin" className="hover:text-brand-200">Orders</Link>
-          <Link href="/admin/services" className="hover:text-brand-200">Services aur Rate</Link>
+          <Link href="/admin/services" className="hover:text-brand-200">Services<span className="hidden sm:inline"> aur Rate</span></Link>
           <Link href="/admin/settings" className="hover:text-brand-200">Settings</Link>
           <span className="flex-1" />
           <Link href="/" className="hover:text-brand-200">Website</Link>
