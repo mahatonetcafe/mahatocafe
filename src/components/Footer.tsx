@@ -1,3 +1,5 @@
+import { Settings } from "lucide-react";
+import { headers } from "next/headers";
 import Image from "next/image";
 import Link from "next/link";
 import { PROMO_PRODUCTS, trackedUrl } from "@/lib/promo";
@@ -7,6 +9,7 @@ import { SHOP } from "@/lib/shop";
 export async function Footer() {
   const settings = await getSettings();
   const { phone, whatsapp, email, address, hours, promo_on } = settings;
+  const inApp = (await headers()).get("user-agent")?.includes("MahatoNetCafeApp") ?? false;
   return (
     <footer className="mt-auto bg-brand-900 text-white/80 text-sm">
       <div className={`container-x py-10 grid gap-8 sm:grid-cols-2 ${promo_on === "1" ? "lg:grid-cols-5" : "lg:grid-cols-4"}`}>
@@ -93,10 +96,18 @@ export async function Footer() {
         </div>
       </div>
       <div className="border-t border-white/15">
-        <p className="container-x py-4 text-xs text-white/70">
-          Mahato Net Cafe ek private cyber cafe hai, koi sarkari website ya vibhag nahi. Yahan li gayi rashi hamari
-          seva ka shulk hai. Aapke documents sirf aapka kaam karne ke liye use hote hain.
-        </p>
+        <div className="container-x flex items-end gap-2 py-4">
+          <p className="flex-1 text-xs text-white/70">
+            Mahato Net Cafe ek private cyber cafe hai, koi sarkari website ya vibhag nahi. Yahan li gayi rashi hamari
+            seva ka shulk hai. Aapke documents sirf aapka kaam karne ke liye use hote hain.
+          </p>
+          {/* Deliberately faint: the shop owner's way in from the Android app, which has no address bar. */}
+          {inApp && (
+            <Link href="/admin" aria-label="Admin login" prefetch={false} className="-m-2 p-2 text-white/20">
+              <Settings className="size-3" aria-hidden />
+            </Link>
+          )}
+        </div>
       </div>
     </footer>
   );
